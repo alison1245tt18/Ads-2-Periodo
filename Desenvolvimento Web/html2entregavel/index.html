@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inscrição no blog</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1>Formulário</h1>
+    </header>
+
+    <main>
+        <aside>
+            <h2>Preencha seus dados</h2>
+            <form action="" method="get">
+                <div class="dados-pessoais">
+                    <div class="campo">
+                        <label for="nome">Nome</label>
+                        <input type="text" id="nome" name="nome" minlength="3" required>
+                    </div>
+
+                    <div class="campo">
+                        <label for="email">E-mail</label>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label for="idade">Idade</label>
+                    <input type="number" id="idade" name="idade" min="18" max="120" required>
+                </div>
+
+                <div class="campo">
+                    <label for="cargo">Cargo</label>
+                    <select id="cargo" name="cargo" required>
+                        <option value="" selected disabled>Escolha um cargo</option>
+                        <option value="aluno">Aluno</option>
+                        <option value="funcionario">Funcionário</option>
+                        <option value="professor">Professor</option>
+                    </select>
+                </div>
+
+                <label class="terms" for="termos">
+                    <input type="checkbox" id="termos" name="termos" value="aceito" required>
+                    Aceito os termos.
+                </label>
+
+                <button type="submit">Enviar cadastro</button>
+            </form>
+        </aside>
+    </main>
+
+    <footer>
+        <p>Todos os campos são obrigatórios.</p>
+    </footer>
+</body>
+</html>
