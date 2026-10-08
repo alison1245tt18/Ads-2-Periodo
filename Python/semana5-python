@@ -1,0 +1,144 @@
+import csv
+import re
+import sys
+from datetime import datetime
+
+CAMPOS = ["nome", "email", "cpf", "telefone", "data_nascimento"]
+
+REGEX_EMAIL = r"^[\w\.-]+@[\w-]+(\.[\w-]+)*\.[a-zA-Z]{2,}$"
+REGEX_CPF = r"^\d{3}\.\d{3}\.\d{3}-\d{2}$"
+REGEX_TELEFONE = r"^\(\d{2}\) 9?\d{4}-\d{4}$"
+REGEX_DATA = r"^\d{2}/\d{2}/\d{4}$"
+
+
+class FormatoInvalidoError(Exception):
+    def __init__(self, campo, valor):
+        self.campo = campo
+        self.valor = valor
+        super().__init__(f"{campo} com formato inválido: '{valor}'")
+
+
+class IdadeInvalidaError(Exception):
+    def __init__(self, idade):
+        self.campo = "data_nascimento"
+        self.idade = idade
+        super().__init__(f"idade fora do aceitável: {idade} anos")
+
+
+def validar_formato(campo, valor, padrao):
+    if not re.match(padrao, valor):
+        raise FormatoInvalidoError(campo, valor)
+
+
+def calcular_idade(data_texto):
+    nascimento = datetime.strptime(data_texto, "%d/%m/%Y")
+    hoje = datetime.today()
+    antes_do_aniversario = (hoje.month, hoje.day) < (nascimento.month, nascimento.day)
+    return hoje.year - nascimento.year - antes_do_aniversario
+
+
+def validar_registro(linha):
+    validar_formato("email", linha["email"], REGEX_EMAIL)
+    validar_formato("cpf", linha["cpf"], REGEX_CPF)
+    validar_formato("telefone", linha["telefone"], REGEX_TELEFONE)
+    validar_formato("data_nascimento", linha["data_nascimento"], REGEX_DATA)
+
+    idade = calcular_idade(linha["data_nascimento"])
+    if idade < 0 or idade > 120:
+        raise IdadeInvalidaError(idade)
+
+
+def ler_arquivo(caminho):
+    registros = []
+    try:
+        with open(caminho, encoding="utf-8", newline="") as arquivo:
+            leitor = csv.DictReader(arquivo)
+            colunas = leitor.fieldnames or []
+            for campo in CAMPOS:
+                if campo not in colunas:
+                    raise KeyError(campo)
+            for linha in leitor:
+                registros.append({k: (v or "").strip() for k, v in linha.items() if k})
+    except FileNotFoundError:
+        print(f"Arquivo '{caminho}' não encontrado.")
+    except KeyError as erro:
+        print(f"Coluna ausente no CSV: {erro}")
+    else:
+        print(f"{len(registros)} registros lidos de '{caminho}'.")
+    finally:
+        print("Leitura finalizada.\n")
+    return registros
+
+
+def processar(registros):
+    validos = []
+    invalidos = []
+    for numero, linha in enumerate(registros, start=2):
+        try:
+            validar_registro(linha)
+        except (FormatoInvalidoError, IdadeInvalidaError) as erro:
+            invalidos.append((numero, linha["nome"], erro.campo, str(erro)))
+        except ValueError:
+            invalidos.append((numero, linha["nome"], "data_nascimento",
+                              f"data inexistente: '{linha['data_nascimento']}'"))
+        else:
+            validos.append(linha)
+    return validos, invalidos
+
+
+def montar_relatorio(validos, invalidos):
+    total = len(validos) + len(invalidos)
+    taxa = len(validos) / total * 100 if total else 0
+    idades = [calcular_idade(l["data_nascimento"]) for l in validos]
+    media_idade = sum(idades) / len(idades) if idades else 0
+
+    erros_por_campo = {}
+    for _, _, campo, _ in invalidos:
+        erros_por_campo[campo] = erros_por_campo.get(campo, 0) + 1
+
+    linhas = [
+        "RELATÓRIO DE VALIDAÇÃO",
+        "-" * 40,
+        f"Total de registros: {total}",
+        f"Válidos:            {len(validos)} ({taxa:.1f}%)",
+        f"Inválidos:          {len(invalidos)}",
+        f"Idade média (válidos): {media_idade:.1f} anos",
+        "",
+        "Registros válidos:",
+    ]
+    for l in validos:
+        linhas.append(f"  {l['nome']:<15} {l['email']:<28} {l['telefone']}")
+
+    linhas.append("")
+    linhas.append("Registros inválidos:")
+    for numero, nome, campo, motivo in invalidos:
+        linhas.append(f"  linha {numero:<3} {nome:<15} {motivo}")
+
+    linhas.append("")
+    linhas.append("Erros por campo:")
+    for campo, qtd in erros_por_campo.items():
+        linhas.append(f"  {campo}: {qtd}")
+
+    return "\n".join(linhas)
+
+
+def main():
+    caminho = "dados.csv"
+    if len(sys.argv) > 1 and not sys.argv[1].startswith("-"):
+        caminho = sys.argv[1]
+
+    registros = ler_arquivo(caminho)
+    if not registros:
+        return
+    
+
+    validos, invalidos = processar(registros)
+    relatorio = montar_relatorio(validos, invalidos)
+    print(relatorio)
+
+    with open("relatorio.txt", "w", encoding="utf-8") as saida:
+        saida.write(relatorio + "\n")
+
+
+if __name__ == "__main__":
+    main()
