@@ -1,0 +1,195 @@
+//pedidos
+const pedidos = [
+  { cliente: "Bia", valor: 120, status: "pago" },
+  { cliente: "", valor: 50, status: "pago" },
+  { cliente: "Caio", valor: -10, status: "pago" },
+  { cliente: "Dani", valor: 80.5, status: "pendente" },
+  { cliente: "Edu", valor: "abc", status: "pago" },
+  { cliente: "Fabi", valor: 200, status: "pago" },
+  { cliente: "Gabi", valor: 35.9, status: "pago" },
+];
+
+const pedidoValido = ({ cliente, valor }) =>
+  typeof cliente === "string" &&
+  cliente.trim() !== "" &&
+  typeof valor === "number" &&
+  valor > 0;
+
+const validos = pedidos.filter(pedidoValido);
+const pagos = validos.filter((pedido) => pedido.status === "pago");
+const totalFaturado = pagos.reduce((soma, pedido) => soma + pedido.valor, 0);
+const textos = pagos.map(({ cliente, valor }) => `${cliente} – R$ ${valor.toFixed(2)}`);
+
+console.log(`Válidos: ${validos.length} de ${pedidos.length}`);
+console.log(`Pagos: ${pagos.length}`);
+textos.forEach((texto) => console.log(texto));
+console.log(`Total faturado: R$ ${totalFaturado.toFixed(2)}`);
+
+//Cep
+
+const formulario = document.querySelector("#formulario");
+const campoCep = document.querySelector("#cep");
+const botao = document.querySelector("#buscar");
+const aviso = document.querySelector("#aviso");
+const resultado = document.querySelector("#resultado");
+const listaHistorico = document.querySelector("#historico");
+
+const historico = [];
+
+const limparCep = (texto) => texto.trim().replace(/[\s-]/g, "");
+const cepValido = (cep) => /^\d{8}$/.test(cep);
+
+function mostrarAviso(texto, ehErro = false) {
+  aviso.textContent = texto;
+  aviso.classList.toggle("erro", ehErro);
+}
+
+async function buscarCep(cep) {
+  const resposta = await fetch(`https://viacep.com.br/ws/${cep}/json/`, {
+    signal: AbortSignal.timeout(5000),
+  });
+  if (!resposta.ok) {
+    throw new Error(`Erro HTTP ${resposta.status}`);
+  }
+  return resposta.json();
+}
+
+function mostrarEndereco(dados) {
+  const campos = [
+    ["Rua", dados.logradouro],
+    ["Bairro", dados.bairro],
+    ["Cidade", dados.localidade],
+    ["UF", dados.uf],
+  ];
+
+  const elementos = campos.flatMap(([rotulo, valor]) => {
+    const dt = document.createElement("dt");
+    dt.textContent = rotulo;
+    const dd = document.createElement("dd");
+    dd.textContent = valor || "—";
+    return [dt, dd];
+  });
+
+  resultado.replaceChildren(...elementos);
+}
+
+function mostrarHistorico() {
+  const itens = historico.map(({ cep, cidade, uf }) => {
+    const li = document.createElement("li");
+    li.textContent = `${cep} – ${cidade}/${uf}`;
+    return li;
+  });
+  listaHistorico.replaceChildren(...itens);
+}
+
+formulario.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const cep = limparCep(campoCep.value);
+  if (!cepValido(cep)) {
+    mostrarAviso("Digite um CEP com exatamente 8 números.", true);
+    return;
+  }
+
+  botao.disabled = true;
+  mostrarAviso("Buscando...");
+  resultado.replaceChildren();
+
+  try {
+    const dados = await buscarCep(cep);
+
+    if (dados.erro) {
+      mostrarAviso("CEP não encontrado.", true);
+      return;
+    }
+
+    mostrarEndereco(dados);
+    mostrarAviso("");
+    historico.unshift({ cep, cidade: dados.localidade, uf: dados.uf });
+    mostrarHistorico();
+  } catch (erro) {
+    if (erro.name === "TimeoutError") {
+      mostrarAviso("A busca demorou demais. Tente novamente.", true);
+    } else {
+      mostrarAviso("Falha na conexão. Verifique sua internet e tente de novo.", true);
+    }
+  } finally {
+    botao.disabled = false;
+  }
+});
+
+//Pokedex
+
+const formulario = document.querySelector("#formulario");
+const campoNome = document.querySelector("#nome");
+const botao = document.querySelector("#buscar");
+const aviso = document.querySelector("#aviso");
+const resultado = document.querySelector("#resultado");
+
+function mostrarAviso(texto, ehErro = false) {
+  aviso.textContent = texto;
+  aviso.classList.toggle("erro", ehErro);
+}
+
+async function buscarPokemon(nome) {
+  const resposta = await fetch(
+    `https://pokeapi.co/api/v2/pokemon/${encodeURIComponent(nome)}`,
+    { signal: AbortSignal.timeout(5000) }
+  );
+
+  if (resposta.status === 404) {
+    return null;
+  }
+  if (!resposta.ok) {
+    throw new Error(`Erro HTTP ${resposta.status}`);
+  }
+  return resposta.json();
+}
+
+function mostrarPokemon(dados) {
+  const titulo = document.createElement("h2");
+  titulo.textContent = dados.name;
+
+  const imagem = document.createElement("img");
+  imagem.src = dados.sprites.front_default;
+  imagem.alt = `Sprite de ${dados.name}`;
+
+  const tipos = document.createElement("p");
+  tipos.textContent = `Tipos: ${dados.types.map(({ type }) => type.name).join(", ")}`;
+
+  resultado.replaceChildren(titulo, imagem, tipos);
+}
+
+formulario.addEventListener("submit", async (e) => {
+  e.preventDefault();
+
+  const nome = campoNome.value.trim().toLowerCase();
+  if (nome === "") {
+    mostrarAviso("Digite o nome de um Pokémon.", true);
+    return;
+  }
+
+  botao.disabled = true;
+  mostrarAviso("Buscando...");
+  resultado.replaceChildren();
+
+  try {
+    const dados = await buscarPokemon(nome);
+
+    if (dados === null) {
+      mostrarAviso("Pokémon não encontrado.", true);
+      return;
+    }
+
+    mostrarPokemon(dados);
+    mostrarAviso("");
+  } catch (erro) {
+    if (erro.name === "TimeoutError") {
+      mostrarAviso("A busca demorou demais. Tente novamente.", true);
+    } else {
+      mostrarAviso("Falha na conexão. Verifique sua internet e tente de novo.", true);
+    }
+  } finally {
+    botao.disabled = false;
+  }
+});
