@@ -1,0 +1,339 @@
+import re
+from abc import ABC, abstractmethod
+
+PADRAO_EMAIL = r"^[\w\.-]+@[\w-]+(\.[\w-]+)+$"
+
+
+class SaldoInsuficienteError(Exception):
+    """Operação que deixaria a conta abaixo do saldo mínimo permitido."""
+
+
+class Cliente:
+    """Pessoa titular de uma ou mais contas."""
+
+    def __init__(self, nome, email):
+        self.nome = nome
+        self.email = email
+
+    @property
+    def nome(self):
+        return self._nome
+
+    @nome.setter
+    def nome(self, valor):
+        valor = str(valor).strip()
+        if len(valor) < 2:
+            raise ValueError("O nome precisa ter pelo menos 2 caracteres.")
+        self._nome = valor
+
+    @property
+    def email(self):
+        return self._email
+
+    @email.setter
+    def email(self, valor):
+        valor = str(valor).strip()
+        if not re.match(PADRAO_EMAIL, valor):
+            raise ValueError(f"E-mail inválido: '{valor}'.")
+        self._email = valor
+
+    def __str__(self):
+        return f"{self.nome} <{self.email}>"
+
+    def __repr__(self):
+        return f"Cliente(nome={self.nome!r}, email={self.email!r})"
+
+    def __eq__(self, outro):
+        if not isinstance(outro, Cliente):
+            return NotImplemented
+        return self.email.lower() == outro.email.lower()
+
+    def __hash__(self):
+        return hash(self.email.lower())
+
+
+class Conta(ABC):
+    """Classe base abstrata das contas do banco."""
+
+    tipo = "Conta"
+    _proximo_numero = 1
+
+    def __init__(self, titular, saldo_inicial=0.0):
+        if not isinstance(titular, Cliente):
+            raise TypeError("O titular precisa ser um Cliente.")
+        if saldo_inicial < 0:
+            raise ValueError("O saldo inicial não pode ser negativo.")
+        self._titular = titular
+        self._saldo = round(float(saldo_inicial), 2)
+        self._historico = []
+        self._numero = Conta._proximo_numero
+        Conta._proximo_numero += 1
+
+    @property
+    def numero(self):
+        return self._numero
+
+    @property
+    def titular(self):
+        return self._titular
+
+    @property
+    def historico(self):
+        return tuple(self._historico)
+
+    @property
+    def saldo(self):
+        return self._saldo
+
+    @saldo.setter
+    def saldo(self, valor):
+        minimo = self._saldo_minimo()
+        if valor < minimo:
+            raise SaldoInsuficienteError(
+                f"Saldo de R$ {valor:.2f} ficaria abaixo do mínimo de R$ {minimo:.2f}."
+            )
+        self._saldo = round(float(valor), 2)
+
+    def _saldo_minimo(self):
+        return 0.0
+
+    @staticmethod
+    def _validar_valor(valor):
+        if not isinstance(valor, (int, float)) or valor <= 0:
+            raise ValueError("O valor da operação deve ser um número positivo.")
+
+    def depositar(self, valor):
+        """Soma o valor ao saldo."""
+        self._validar_valor(valor)
+        self.saldo = self._saldo + valor
+        self._historico.append(("depósito", valor))
+
+    def sacar(self, valor):
+        """Subtrai o valor do saldo, respeitando o mínimo da conta."""
+        self._validar_valor(valor)
+        self.saldo = self._saldo - valor
+        self._historico.append(("saque", valor))
+
+    def transferir(self, destino, valor):
+        """Move o valor desta conta para outra conta."""
+        if not isinstance(destino, Conta):
+            raise TypeError("O destino precisa ser uma Conta.")
+        self.sacar(valor)
+        destino.depositar(valor)
+
+    @abstractmethod
+    def aplicar_rotina_mensal(self):
+        """Executa a rotina de fim de mês e devolve o valor movimentado."""
+
+    def __str__(self):
+        return (f"[{self.tipo}] Conta {self.numero:03d} - {self.titular.nome} "
+                f"- saldo R$ {self.saldo:.2f}")
+
+    def __repr__(self):
+        return (f"{type(self).__name__}(numero={self.numero}, "
+                f"titular={self.titular.nome!r}, saldo={self.saldo:.2f})")
+
+    def __eq__(self, outra):
+        if not isinstance(outra, Conta):
+            return NotImplemented
+        return self.numero == outra.numero
+
+    def __hash__(self):
+        return hash(self.numero)
+
+    def __lt__(self, outra):
+        if not isinstance(outra, Conta):
+            return NotImplemented
+        return self.saldo < outra.saldo
+
+
+class ContaCorrente(Conta):
+    """Conta com limite de cheque especial e tarifa mensal."""
+
+    tipo = "Corrente"
+
+    def __init__(self, titular, saldo_inicial=0.0, limite=500.0, tarifa=15.0):
+        super().__init__(titular, saldo_inicial)
+        self.limite = limite
+        self.tarifa = tarifa
+
+    @property
+    def limite(self):
+        return self._limite
+
+    @limite.setter
+    def limite(self, valor):
+        if valor < 0:
+            raise ValueError("O limite não pode ser negativo.")
+        if self._saldo < -valor:
+            raise ValueError("O saldo atual já está além do novo limite.")
+        self._limite = float(valor)
+
+    @property
+    def tarifa(self):
+        return self._tarifa
+
+    @tarifa.setter
+    def tarifa(self, valor):
+        if valor < 0:
+            raise ValueError("A tarifa não pode ser negativa.")
+        self._tarifa = float(valor)
+
+    def _saldo_minimo(self):
+        return -self._limite
+
+    def aplicar_rotina_mensal(self):
+        self.saldo = self._saldo - self._tarifa
+        self._historico.append(("tarifa", self._tarifa))
+        return -self._tarifa
+
+    def __str__(self):
+        return f"{super().__str__()} | limite R$ {self.limite:.2f}"
+
+
+class ContaPoupanca(Conta):
+    """Conta que rende juros mensais sobre o saldo."""
+
+    tipo = "Poupança"
+
+    def __init__(self, titular, saldo_inicial=0.0, taxa_juros=0.005):
+        super().__init__(titular, saldo_inicial)
+        self.taxa_juros = taxa_juros
+
+    @property
+    def taxa_juros(self):
+        return self._taxa_juros
+
+    @taxa_juros.setter
+    def taxa_juros(self, valor):
+        if not 0 <= valor <= 0.1:
+            raise ValueError("A taxa mensal deve ficar entre 0 e 0,10 (10%).")
+        self._taxa_juros = float(valor)
+
+    def aplicar_rotina_mensal(self):
+        juros = round(self._saldo * self._taxa_juros, 2)
+        self.saldo = self._saldo + juros
+        self._historico.append(("rendimento", juros))
+        return juros
+
+    def __str__(self):
+        return f"{super().__str__()} | taxa {self.taxa_juros:.2%}"
+
+
+class Banco:
+    """Guarda as contas abertas (composição: o banco tem contas)."""
+
+    def __init__(self, nome):
+        self.nome = nome
+        self._contas = []
+
+    def abrir_conta(self, conta):
+        if not isinstance(conta, Conta):
+            raise TypeError("Só é possível cadastrar objetos do tipo Conta.")
+        if conta in self._contas:
+            raise ValueError(f"A conta {conta.numero} já está cadastrada.")
+        self._contas.append(conta)
+
+    def buscar(self, numero):
+        for conta in self._contas:
+            if conta.numero == numero:
+                return conta
+        return None
+
+    def saldo_total(self):
+        return sum(conta.saldo for conta in self._contas)
+
+    def __len__(self):
+        return len(self._contas)
+
+    def __iter__(self):
+        return iter(self._contas)
+
+    def __str__(self):
+        return f"{self.nome} ({len(self)} contas, R$ {self.saldo_total():.2f} no total)"
+
+    def __repr__(self):
+        return f"Banco(nome={self.nome!r})"
+
+from contas import (Banco, Cliente, Conta, ContaCorrente, ContaPoupanca,
+                    SaldoInsuficienteError)
+
+
+def montar_banco():
+    banco = Banco("Banco Ilha")
+    ana = Cliente("Ana Souza", "ana.souza@email.com")
+    bruno = Cliente("Bruno Lima", "bruno@email.com")
+    carla = Cliente("Carla Dias", "carla.dias@email.com")
+    diego = Cliente("Diego Alves", "diego@email.com")
+    elisa = Cliente("Elisa Rocha", "elisa@email.com")
+
+    banco.abrir_conta(ContaCorrente(ana, 1200))
+    banco.abrir_conta(ContaPoupanca(ana, 5000))
+    banco.abrir_conta(ContaCorrente(bruno, 80, limite=300))
+    banco.abrir_conta(ContaPoupanca(carla, 2500, taxa_juros=0.007))
+    banco.abrir_conta(ContaCorrente(diego, 0, limite=1000, tarifa=25))
+    banco.abrir_conta(ContaPoupanca(elisa, 300))
+    return banco, ana
+
+
+def mostrar_contas(titulo, contas):
+    print(f"\n{titulo}")
+    for conta in contas:
+        print(" ", conta)
+
+
+def main():
+    banco, ana = montar_banco()
+    print(banco)
+    mostrar_contas("Contas abertas:", banco)
+
+    print("\nRotina mensal (polimorfismo):")
+    for conta in banco:
+        try:
+            valor = conta.aplicar_rotina_mensal()
+        except SaldoInsuficienteError as erro:
+            print(f"  Conta {conta.numero:03d} ({conta.tipo}): falhou - {erro}")
+        else:
+            print(f"  Conta {conta.numero:03d} ({conta.tipo}): {valor:+.2f}")
+
+    mostrar_contas("Contas por saldo (menor para maior):", sorted(banco))
+
+    primeira = banco.buscar(1)
+    segunda = banco.buscar(2)
+    primeira.transferir(segunda, 200)
+    print("\nApós transferir R$ 200 da conta 1 para a 2:")
+    print(" ", repr(primeira))
+    print(" ", repr(segunda))
+    print("  Histórico da conta 1:", primeira.historico)
+
+    print("\nComparações:")
+    print("  Cliente igual (e-mail com maiúsculas)?",
+          ana == Cliente("Ana Souza", "ANA.SOUZA@email.com"))
+    print("  Conta 1 == Conta 2?", primeira == segunda)
+    print("  Conta 1 < Conta 2?", primeira < segunda)
+
+    testes_invalidos = [
+        ("e-mail sem @", lambda: Cliente("Teste", "sem-arroba")),
+        ("nome vazio", lambda: Cliente(" ", "teste@email.com")),
+        ("saldo inicial negativo", lambda: ContaPoupanca(ana, -10)),
+        ("depósito negativo", lambda: primeira.depositar(-50)),
+        ("saque acima do limite", lambda: primeira.sacar(5000)),
+        ("taxa de juros absurda", lambda: ContaPoupanca(ana, 0, 2)),
+        ("titular que não é Cliente", lambda: ContaCorrente("Ana")),
+        ("instanciar classe abstrata", lambda: Conta(ana)),
+    ]
+
+    print("\nEntradas inválidas:")
+    for descricao, acao in testes_invalidos:
+        try:
+            acao()
+        except (ValueError, TypeError, SaldoInsuficienteError) as erro:
+            print(f"  {descricao}: {type(erro).__name__} - {erro}")
+        else:
+            print(f"  {descricao}: nenhum erro (inesperado)")
+
+    print(f"\n{banco}")
+
+
+if __name__ == "__main__":
+    main()
