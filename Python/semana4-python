@@ -1,0 +1,214 @@
+#Sistema de Produtos - Listas, Tuplas e Conjuntos
+#Toda vez que acabar uma função vou deixar o código em portugol em baixo, só vi
+#agora que precisava fazer isso
+
+
+def cadastrar_produtos():
+    nomes = []
+    precos = []
+    categorias = []
+
+    quantidade = int(input("Quantos produtos deseja cadastrar? "))
+    for i in range(quantidade):
+        print(f"\nProduto {i + 1}")
+        nomes.append(input("Nome: ").strip())
+        precos.append(float(input("Preço: ").replace(",", ".")))
+        categorias.append(input("Categoria: ").strip().lower())
+
+    return nomes, precos, categorias
+
+
+# --- Portugol ---------------------------------------------------------------
+# programa {
+#   funcao inicio() {
+#     const inteiro TAM = 5
+#     cadeia nomes[TAM], categorias[TAM]
+#     real precos[TAM]
+#
+#     para (inteiro i = 0; i < TAM; i++) {
+#       escreva("Nome: ")
+#       leia(nomes[i])
+#       escreva("Preço: ")
+#       leia(precos[i])
+#       escreva("Categoria: ")
+#       leia(categorias[i])
+#     }
+#   }
+# }
+
+
+
+def filtrar_por_preco(nomes, precos, categorias, valor_limite, acima=True):
+    filtrados = []
+    for i in range(len(nomes)):
+        if (acima and precos[i] > valor_limite) or (not acima and precos[i] < valor_limite):
+            filtrados.append((nomes[i], precos[i], categorias[i]))
+    return filtrados
+
+
+# --- Portugol ---------------------------------------------------------------
+# real limite
+# logico acima
+# escreva("Valor limite: ")
+# leia(limite)
+#
+# para (inteiro i = 0; i < TAM; i++) {
+#   se (precos[i] > limite) {
+#     escreva(nomes[i], " - R$ ", precos[i], "\n")
+#   }
+# }
+
+
+
+def ordenar_por_preco(nomes, precos, categorias):
+    produtos = list(zip(precos, nomes, categorias))
+
+    crescente = produtos.copy()
+    crescente.sort()  # sort() modifica a própria lista (a cópia)
+
+    decrescente = sorted(produtos, reverse=True)  # sorted() cria uma nova lista
+
+    return crescente, decrescente
+
+
+# --- Portugol: bubble sort (crescente) --------------------------------------
+# inteiro i, j
+# real aux_preco
+# cadeia aux_nome, aux_cat
+#
+# para (i = 0; i < TAM - 1; i++) {
+#   para (j = 0; j < TAM - 1 - i; j++) {
+#     se (precos[j] > precos[j + 1]) {
+#       // troca os preços
+#       aux_preco = precos[j]
+#       precos[j] = precos[j + 1]
+#       precos[j + 1] = aux_preco
+#       // troca os nomes (acompanham o preço)
+#       aux_nome = nomes[j]
+#       nomes[j] = nomes[j + 1]
+#       nomes[j + 1] = aux_nome
+#       // troca as categorias
+#       aux_cat = categorias[j]
+#       categorias[j] = categorias[j + 1]
+#       categorias[j + 1] = aux_cat
+#     }
+#   }
+# }
+# // Para decrescente, troque a condição por: precos[j] < precos[j + 1]
+
+
+
+def obter_categorias_unicas(categorias):
+    return set(categorias)
+
+
+# --- Portugol: simulação manual de conjunto ---------------------------------
+# cadeia unicas[TAM]
+# inteiro qtd_unicas = 0
+#
+# para (inteiro i = 0; i < TAM; i++) {
+#   logico repetida = falso
+#   para (inteiro j = 0; j < qtd_unicas; j++) {
+#     se (categorias[i] == unicas[j]) {
+#       repetida = verdadeiro
+#     }
+#   }
+#   se (nao repetida) {
+#     unicas[qtd_unicas] = categorias[i]
+#     qtd_unicas++
+#   }
+# }
+
+def calcular_estatisticas(precos):
+    menor_preco = min(precos)
+    maior_preco = max(precos)
+    media_precos = sum(precos) / len(precos)
+    return (menor_preco, maior_preco, media_precos)
+
+
+# --- Portugol ---------------------------------------------------------------
+# real menor = precos[0]
+# real maior = precos[0]
+# real soma = 0.0
+# real media
+#
+# para (inteiro i = 0; i < TAM; i++) {
+#   se (precos[i] < menor) {
+#     menor = precos[i]
+#   }
+#   se (precos[i] > maior) {
+#     maior = precos[i]
+#   }
+#   soma = soma + precos[i]
+# }
+# media = soma / TAM
+
+
+def imprimir_relatorio(nomes, precos, categorias, valor_limite,
+                       filtrados, crescente, decrescente,
+                       categorias_unicas, estatisticas):
+    menor_preco, maior_preco, media_precos = estatisticas
+
+    print("\n" + "=" * 50)
+    print(f"{'RELATÓRIO FINAL':^50}")
+    print("=" * 50)
+
+    print("\n--- Produtos cadastrados ---")
+    for nome, preco, categoria in zip(nomes, precos, categorias):
+        print(f"{nome:<20} R$ {preco:>8.2f}  [{categoria}]")
+
+    print(f"\n--- Produtos acima de R$ {valor_limite:.2f} ---")
+    if filtrados:
+        for nome, preco, categoria in filtrados:
+            print(f"{nome:<20} R$ {preco:>8.2f}  [{categoria}]")
+    else:
+        print("Nenhum produto encontrado.")
+
+    print("\n--- Preço crescente ---")
+    for preco, nome, categoria in crescente:
+        print(f"{nome:<20} R$ {preco:>8.2f}")
+
+    print("\n--- Preço decrescente ---")
+    for preco, nome, categoria in decrescente:
+        print(f"{nome:<20} R$ {preco:>8.2f}")
+
+    print(f"\n--- Categorias únicas ({len(categorias_unicas)}) ---")
+    print(", ".join(sorted(categorias_unicas)))
+
+    print("\n--- Estatísticas ---")
+    print(f"Menor preço: R$ {menor_preco:.2f}")
+    print(f"Maior preço: R$ {maior_preco:.2f}")
+    print(f"Preço médio: R$ {media_precos:.2f}")
+    print("=" * 50)
+
+
+# --- Portugol ---------------------------------------------------------------
+# escreva("===== RELATÓRIO FINAL =====\n")
+# para (inteiro i = 0; i < TAM; i++) {
+#   escreva(nomes[i], " | R$ ", precos[i], " | ", categorias[i], "\n")
+# }
+# escreva("Menor preço: R$ ", menor, "\n")
+# escreva("Maior preço: R$ ", maior, "\n")
+# escreva("Preço médio: R$ ", media, "\n")
+
+
+def main():
+    nomes, precos, categorias = cadastrar_produtos()
+    if not nomes:
+        print("Nenhum produto cadastrado.")
+        return
+
+    valor_limite = float(input("\nMostrar produtos com preço acima de: ").replace(",", "."))
+
+    filtrados = filtrar_por_preco(nomes, precos, categorias, valor_limite, acima=True)
+    crescente, decrescente = ordenar_por_preco(nomes, precos, categorias)
+    categorias_unicas = obter_categorias_unicas(categorias)
+    estatisticas = calcular_estatisticas(precos)
+
+    imprimir_relatorio(nomes, precos, categorias, valor_limite,
+                       filtrados, crescente, decrescente,
+                       categorias_unicas, estatisticas)
+
+
+if __name__ == "__main__":
+    main()
