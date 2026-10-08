@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mini Pokédex</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h1>Mini Pokédex</h1>
+
+  <form id="formulario">
+    <label for="nome">Pokémon:</label>
+    <input type="text" id="nome" placeholder="pikachu">
+    <button type="submit" id="buscar">Buscar</button>
+  </form>
+
+  <p id="aviso" role="status"></p>
+  <div id="resultado"></div>
+
+  <script src="pokedex.js" defer></script>
+</body>
+</html>
