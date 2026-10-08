@@ -1,1 +1,151 @@
+//Bloco 1
 
+let pontos = 50;
+pontos += 10;
+console.log("Pontos:", pontos);
+
+const MAX_PONTOS = 100;
+try {
+  MAX_PONTOS = 200;
+} catch (erro) {
+  console.log(`${erro.name}: ${erro.message}`);
+}
+console.log("MAX_PONTOS continua valendo", MAX_PONTOS);
+
+const texto = "JavaScript";
+const numero = 42;
+const verdadeiro = true;
+let indefinida;
+const nulo = null;
+
+const primitivos = { texto, numero, verdadeiro, indefinida, nulo };
+for (const [nome, valor] of Object.entries(primitivos)) {
+  console.log(`${nome} -> typeof: ${typeof valor}`);
+}
+
+const jogador = "Marina";
+const idade = 17;
+
+const comTemplate = `${jogador} tem ${idade} anos e ${pontos} pontos.`;
+const comConcatenacao = jogador + " tem " + idade + " anos e " + pontos + " pontos.";
+
+console.log(comTemplate);
+console.log(comConcatenacao);
+console.log("Resultados iguais?", comTemplate === comConcatenacao);
+
+//Bloco 2
+
+console.log("Declarada, chamada antes:", ehMaiorDeIdade(20));
+
+function ehMaiorDeIdade(idade) {
+  return idade >= 18;
+}
+
+try {
+  console.log(ehMaiorDeIdadeExpressao(20));
+} catch (erro) {
+  console.log(`${erro.name}: ${erro.message}`);
+}
+
+const ehMaiorDeIdadeExpressao = function (idade) {
+  return idade >= 18;
+};
+
+console.log("Expressão, chamada depois:", ehMaiorDeIdadeExpressao(16));
+
+function dobroDeclarada(n) {
+  return n * 2;
+}
+
+const dobroExpressao = function (n) {
+  return n * 2;
+};
+
+const dobroArrow = (n) => n * 2;
+
+console.log("Dobro de 7:", dobroDeclarada(7), dobroExpressao(7), dobroArrow(7));
+
+const dobroComPadrao = (n = 1) => n * 2;
+
+console.log("Sem argumento:", dobroComPadrao());
+console.log("Com argumento:", dobroComPadrao(8));
+
+//Bloco 3
+
+function classificarNota(nota) {
+  if (nota >= 6) {
+    return "Aprovado";
+  } else {
+    return "Reprovado";
+  }
+}
+
+for (const nota of [4.5, 6, 9.5]) {
+  console.log(`Nota ${nota}: ${classificarNota(nota)}`);
+}
+
+const corSemaforo = "amarelo";
+
+switch (corSemaforo) {
+  case "vermelho":
+    console.log("Pare");
+    break;
+  case "amarelo":
+    console.log("Atenção");
+    break;
+  case "verde":
+    console.log("Siga");
+    break;
+  default:
+    console.log("Cor desconhecida");
+}
+
+console.log("\nTabuada do 5:");
+for (let i = 1; i <= 10; i++) {
+  console.log(`5 x ${i} = ${5 * i}`);
+}
+
+console.log("\nContagem regressiva:");
+let contador = 5;
+while (contador >= 1) {
+  console.log(contador);
+  contador--;
+}
+
+console.log("\nPar ou ímpar com for:");
+for (let i = 1; i <= 20; i++) {
+  console.log(`${i} é ${i % 2 === 0 ? "par" : "ímpar"}`);
+}
+
+console.log("\nPar ou ímpar com while:");
+let n = 1;
+while (n <= 20) {
+  console.log(`${n} é ${n % 2 === 0 ? "par" : "ímpar"}`);
+  n++;
+}
+
+function diaDaSemana(numero) {
+  switch (numero) {
+    case 1:
+      return "Domingo";
+    case 2:
+      return "Segunda-feira";
+    case 3:
+      return "Terça-feira";
+    case 4:
+      return "Quarta-feira";
+    case 5:
+      return "Quinta-feira";
+    case 6:
+      return "Sexta-feira";
+    case 7:
+      return "Sábado";
+    default:
+      return "Número inválido";
+  }
+}
+
+console.log("\nDias da semana:");
+for (const numero of [1, 4, 7, 0, 8]) {
+  console.log(`${numero}: ${diaDaSemana(numero)}`);
+}
