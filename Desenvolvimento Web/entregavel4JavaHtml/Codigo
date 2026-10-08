@@ -1,1 +1,108 @@
+//Array
 
+const nomes = ["Ana", "Bruno", "Carla"];
+
+nomes.forEach((nome) => console.log(`Olá, ${nome}!`));
+
+const nomesMaiusculos = nomes.map((nome) => nome.toUpperCase());
+console.log("Maiúsculos:", nomesMaiusculos);
+console.log("Original intacto:", nomes);
+
+const precos = [10, 25, 40, 5, 60];
+
+const precosAcimaDe20 = precos.filter((preco) => preco > 20);
+const totalPrecos = precos.reduce((soma, preco) => soma + preco, 0);
+
+console.log("Acima de 20:", precosAcimaDe20);
+console.log("Soma dos preços:", totalPrecos);
+
+const produtos = [
+  { nome: "Caderno", preco: 15 },
+  { nome: "Mochila", preco: 120 },
+  { nome: "Caneta", preco: 4 },
+  { nome: "Calculadora", preco: 45 },
+  { nome: "Estojo", preco: 30 },
+];
+
+const nomesDosProdutos = produtos.map((produto) => produto.nome);
+const produtosBaratos = produtos.filter((produto) => produto.preco < 50);
+const totalDosProdutos = produtos.reduce((soma, produto) => soma + produto.preco, 0);
+
+console.log("Nomes:", nomesDosProdutos);
+console.log("Menores que 50:", produtosBaratos);
+console.log("Total dos produtos:", totalDosProdutos);
+
+produtos.forEach(({ nome, preco }) => console.log(`${nome}: R$ ${preco}`));
+
+//Dom
+
+const NOME_AUTOR = "Seu Nome";
+
+const titulo = document.querySelector("#titulo");
+titulo.textContent = `Blog do ${NOME_AUTOR}`;
+
+document.querySelectorAll(".texto").forEach((paragrafo) => {
+  console.log(paragrafo.textContent);
+});
+
+const lista = document.querySelector("#lista");
+lista.innerHTML = "<li>Primeiro item</li><li>Segundo item</li>";
+
+const terceiroItem = document.createElement("li");
+terceiroItem.textContent = "Terceiro item";
+lista.append(terceiroItem);
+
+terceiroItem.classList.add("destaque");
+console.log("Tem a classe destaque?", terceiroItem.classList.contains("destaque"));
+
+const tarefas = ["Estudar JS", "Fazer exercícios", "Revisar DOM"];
+
+tarefas.forEach((tarefa) => {
+  const item = document.createElement("li");
+  item.textContent = tarefa;
+  lista.append(item);
+});
+
+lista.querySelector("li").classList.add("feito");
+console.log("Total de itens:", document.querySelectorAll("li").length);
+
+//Eventos
+
+const botao = document.querySelector("#botao");
+const campoNome = document.querySelector("#nome");
+const lista = document.querySelector("#lista");
+const formulario = document.querySelector("#formulario");
+const campoTarefa = document.querySelector("#tarefa");
+
+botao.addEventListener("click", () => console.log("Clicou!"));
+
+botao.addEventListener("mouseover", () => {
+  botao.textContent = "Pode clicar!";
+});
+
+campoNome.addEventListener("keyup", () => console.log(campoNome.value));
+
+lista.addEventListener("click", (e) => {
+  if (e.target.tagName === "LI") {
+    e.target.classList.toggle("feito");
+    console.log(e.target.textContent);
+  }
+});
+
+const itemCriado = document.createElement("li");
+itemCriado.textContent = "Item criado via JavaScript (clique para testar)";
+lista.append(itemCriado);
+
+formulario.addEventListener("submit", (e) => {
+  e.preventDefault();
+
+  const texto = campoTarefa.value.trim();
+  if (texto === "") return;
+
+  const novaTarefa = document.createElement("li");
+  novaTarefa.textContent = texto;
+  lista.append(novaTarefa);
+
+  campoTarefa.value = "";
+  campoTarefa.focus();
+});
