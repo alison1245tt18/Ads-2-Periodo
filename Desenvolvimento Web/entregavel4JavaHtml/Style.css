@@ -1,0 +1,29 @@
+body {
+  font-family: system-ui, sans-serif;
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+  line-height: 1.5;
+  color: #222;
+}
+
+li {
+  cursor: pointer;
+  margin: 0.25rem 0;
+}
+
+.destaque {
+  background: #fff3a3;
+  font-weight: bold;
+}
+
+.feito {
+  text-decoration: line-through;
+  color: #888;
+}
+
+input,
+button {
+  font: inherit;
+  padding: 0.4rem 0.6rem;
+}
